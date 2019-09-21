@@ -607,7 +607,7 @@ function create_room_label(x, y, char, style, form)
 	return tile
 end
 
-function create_exit_label(x, y, type, stub)
+function create_exit_label(x, y, type, stub, char)
 	-- Nicht ausserhalb des Fensters zeichnen...
 	-- Geyser hat sich da etwas affig!
 	if outsideOfMap(x, y) then return end
@@ -627,6 +627,12 @@ function create_exit_label(x, y, type, stub)
 		if stub then img = GUI.getImage("stub_" .. type) end -- andere Area
 		
 		tile:setBackgroundImage(img);
+	end
+	
+	if char then
+		if char ~= "" then
+			tile:echo("&lt;center&gt;" .. char .. "&lt;/center&gt;")
+		end
 	end
 	
 	tile:lower()
@@ -713,10 +719,10 @@ function draw_room(r, x, y, from, count)
 	
 	if r.area ~= MAP.current_room.area then
 		-- Aber ein "Eingang" bitte noch zeichnen... sieht sonst doof aus
-		-- local coord = coords[map.reverseExit(from)]
-		-- if coord then
-			-- create_exit_label(x + coord.x, y + coord.y, map.reverseExit(from))
-		-- end
+		--local coord = coords[map.reverseExit(from)]
+		--if coord then
+			--create_exit_label(x + coord.x * mapZoom, y + coord.y * mapZoom, map.reverseExit(from))
+		--end
 		
 		return 
 	end
@@ -728,9 +734,22 @@ function draw_room(r, x, y, from, count)
 			local nr = MAP.getRoom(exit.target)
 			local nx = x + coord.x * mapZoom
 			local ny = y + coord.y * mapZoom
+			local char = nil
 			
 			if nr then
-				if nr.area ~= MAP.current_room.area then wrong_area = true end
+				if nr.area ~= MAP.current_room.area then 
+					wrong_area = true
+					char = string.sub(nr.area, 1, 3)
+				end
+			end
+			
+			if wrong_area then
+				-- Areakürzel für Areaübergänge
+				-- Ja... zwei Areaübergänge aufeinander sehen Doof aus...
+				-- Kann bzw. will ich aber nicht ändern... Schon probiert 
+				-- und sieht dann für alle anderen doof aus (mapZoom * 0.5)
+				
+				l2 = create_exit_label(nx + coord.x * mapZoom, ny + coord.y * mapZoom, dir, wrong_area, char)
 			end
 			
 			l = create_exit_label(nx, ny, dir, wrong_area)
