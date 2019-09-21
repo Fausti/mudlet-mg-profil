@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE MudletPackage>
+<MudletPackage version="1.001">
+	<AliasPackage>
+		<Alias isActive="yes" isFolder="no">
+			<name>Fragen erleichtern</name>
+			<script>matches[1] = string.gsub(matches[1], 'ü', 'ue' );
+matches[1] = string.gsub(matches[1], 'ö', 'oe' );
+matches[1] = string.gsub(matches[1], 'ä', 'ae' );
+matches[1] = string.gsub(matches[1], 'Ä', 'Ae' );
+matches[1] = string.gsub(matches[1], 'Ö', 'Oe' );
+matches[1] = string.gsub(matches[1], 'Ü', 'Ue' );
+matches[1] = string.gsub(matches[1], 'ß', 'ss' );
+
+send(matches[1], false) -- aktuelle Frage senden...
+
+local wer = matches[2]
+
+wer = string.gsub(wer, 'ü', 'ue' );
+wer = string.gsub(wer, 'ö', 'oe' );
+wer = string.gsub(wer, 'ä', 'ae' );
+wer = string.gsub(wer, 'Ä', 'Ae' );
+wer = string.gsub(wer, 'Ö', 'Oe' );
+wer = string.gsub(wer, 'Ü', 'Ue' );
+wer = string.gsub(wer, 'ß', 'ss' );
+
+tempTimer(0, function() -- Eingabezeile vorbereiten...
+  printCmdLine("frag " .. wer .. " nach ")
+end)
+</script>
+			<command></command>
+			<packageName></packageName>
+			<regex>^frag (.*) nach (.*)</regex>
+		</Alias>
+	</AliasPackage>
+</MudletPackage>

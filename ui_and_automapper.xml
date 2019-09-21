@@ -36,6 +36,7 @@ function OnCommand()
 	
 	local cmd_area = {
 		set 		= cmd_area_set,
+		force   = cmd_area_force,
 	}
 	
 	local cmd_room = {
@@ -63,6 +64,7 @@ function OnCommand()
 		end
 		
 		cmd(args)
+		return
 	elseif string.match(args[1] ,"#area") then
 		-- ohne Argumente
 		if #args == 1 then
@@ -77,6 +79,7 @@ function OnCommand()
 		end
 		
 		cmd(args)
+		return
 	elseif string.match(args[1] ,"#room") then
 		-- ohne Argumente
 		if #args == 1 then
@@ -91,6 +94,7 @@ function OnCommand()
 		end
 		
 		cmd(args)
+		return
 	elseif string.match(args[1] ,"#exit") then
 		-- ohne Argumente
 		if #args == 1 then
@@ -105,6 +109,7 @@ function OnCommand()
 		end
 		
 		cmd(args)
+		return
 	end
 end
 
@@ -119,6 +124,7 @@ function cmd_map_help(args)
 	print('#room symbol   "Symbol"')
 	print("")
 	print('#area set      "Areaname"')
+	print('#area force    "Areaname"')
 	print("")
 end
 
@@ -167,6 +173,11 @@ end
 
 function cmd_area_set(args)
 	MAP.setRoomArea(MAP.current_room.id, args[3], true)
+	draw_map()
+end
+
+function cmd_area_force(args)
+	MAP.setRoomArea(MAP.current_room.id, args[3], true, true)
 	draw_map()
 end
 
@@ -382,11 +393,11 @@ function MAP.setRoomType(uid, form)
 	r.style.form = form
 end
 
-function  MAP.setRoomArea(uid, area, lock)
+function  MAP.setRoomArea(uid, area, lock, force)
 	local r =  MAP.getRoom(uid)
 	if not r then return end
 	
-	if not r.locked_area then
+	if not r.locked_area or force then
 		r.area = area
 		if lock then r.locked_area = true end
 	end
@@ -407,14 +418,18 @@ function MAP.debug()
 end
 
 function MAP.save()
-	table.save("D:/Morgengrauen/karte.lua", MAP.rooms)
+	table.save(MG.filePath .. "karte.lua", MAP.rooms)
+	PrintOk("Karte gespeichert!")
 end
 
 function MAP.load()
 	MAP.rooms = MAP.rooms or {}
 	
-	if io.exists("D:/Morgengrauen/karte.lua") then
-  	table.load("D:/Morgengrauen/karte.lua", MAP.rooms) -- using / is OK on Windows too.
+	if io.exists(MG.filePath .. "karte.lua") then
+  	table.load(MG.filePath .. "karte.lua", MAP.rooms) -- using / is OK on Windows too.
+		PrintOk("Karte geladen!")
+	else
+		PrintError("Karte konnte nicht geladen werden!")
 	end
 end
 
@@ -872,9 +887,10 @@ function print_message(msg, link)
 	if GUI.containerConsole ~= nil then
 		if GUI.containerConsole.echo ~= nil then
 			if not link then
-				cecho("containerConsole", msg)
+				GUI.containerConsole:cecho(msg)
 			else
-				cechoLink("containerConsole", msg, link, "", true)
+				GUI.containerConsole:cechoLink(msg, link, "", true)
+				GUI.containerConsole:cecho("") -- wegen Scrollbug
 			end
 			-- GUI.containerConsole:cecho(msg)
 		end
@@ -885,6 +901,9 @@ function print_message(msg, link)
 	else
 		cechoLink(msg, link, "", true)
 	end
+	
+	-- moveCursorEnd("containerConsole")
+	-- moveCursorDown("containerConsole")
 end
 
 function textWrap( str, limit, indent, indentFirst )
@@ -1162,7 +1181,8 @@ function GUI.init()
 	
 	GUI.containerConsole:setColor("black")
 	GUI.containerConsole:setFont(getFont())
-	GUI.containerConsole:setFontSize(getFontSize())
+	-- GUI.containerConsole:setFontSize(getFontSize())
+	GUI.containerConsole:setFontSize(12)
 	
 	GUI.labelLeft = Geyser.Label:new({
 		name = "labelLeft",

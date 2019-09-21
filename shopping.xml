@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE MudletPackage>
+<MudletPackage version="1.001">
+	<TriggerPackage>
+		<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+			<name>Shopping</name>
+			<script></script>
+			<triggerType>0</triggerType>
+			<conditonLineDelta>0</conditonLineDelta>
+			<mStayOpen>0</mStayOpen>
+			<mCommand></mCommand>
+			<packageName></packageName>
+			<mFgColor>#ff0000</mFgColor>
+			<mBgColor>#ffff00</mBgColor>
+			<mSoundFile></mSoundFile>
+			<colorTriggerFgColor>#000000</colorTriggerFgColor>
+			<colorTriggerBgColor>#000000</colorTriggerBgColor>
+			<regexCodeList />
+			<regexCodePropertyList />
+			<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+				<name>Warenliste</name>
+				<script>enableTrigger("Warenliste - Zeile#1")
+enableTrigger("Warenliste - Zeile#2")
+
+cecho("containerConsole", "\n\n&lt;yellow&gt;    __--==[ Angebot: "..matches[2].." ]==--__&lt;reset&gt;\n\n")</script>
+				<triggerType>0</triggerType>
+				<conditonLineDelta>0</conditonLineDelta>
+				<mStayOpen>0</mStayOpen>
+				<mCommand></mCommand>
+				<packageName></packageName>
+				<mFgColor>#ff0000</mFgColor>
+				<mBgColor>#ffff00</mBgColor>
+				<mSoundFile></mSoundFile>
+				<colorTriggerFgColor>#000000</colorTriggerFgColor>
+				<colorTriggerBgColor>#000000</colorTriggerBgColor>
+				<regexCodeList>
+					<string>^Folgende (.+) kannst Du hier kaufen:</string>
+				</regexCodeList>
+				<regexCodePropertyList>
+					<integer>1</integer>
+				</regexCodePropertyList>
+			</Trigger>
+			<Trigger isActive="no" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="yes" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+				<name>Warenliste - Zeile#1</name>
+				<script>-- normale Warenzeile mit 1 Gegenstand
+
+local match = matches[3] .. " " .. matches[4]
+cmd = "printCmdLine('kaufe "..matches[2] .. "')"
+local note = string.trim(matches[3]).." ("..matches[4]..")"
+local space = ""
+
+if #matches[2] == 1 then space = " " end
+
+cechoLink("containerConsole", "&lt;white&gt;  ".. space .. matches[2] .. ". " .. match, cmd, "", true)
+cecho("containerConsole", " | \n")</script>
+				<triggerType>0</triggerType>
+				<conditonLineDelta>0</conditonLineDelta>
+				<mStayOpen>0</mStayOpen>
+				<mCommand></mCommand>
+				<packageName></packageName>
+				<mFgColor>#ff0000</mFgColor>
+				<mBgColor>#ffff00</mBgColor>
+				<mSoundFile></mSoundFile>
+				<colorTriggerFgColor>#000000</colorTriggerFgColor>
+				<colorTriggerBgColor>#000000</colorTriggerBgColor>
+				<regexCodeList>
+					<string>^\s+(\d+)\.\s(.+)\s+(\d+)\s\|\s*$</string>
+				</regexCodeList>
+				<regexCodePropertyList>
+					<integer>1</integer>
+				</regexCodePropertyList>
+			</Trigger>
+			<Trigger isActive="no" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="yes" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+				<name>Warenliste - Zeile#2</name>
+				<script>-- normale Warenzeile mit 2 Gegenständen
+
+local match = matches[3] .. " " .. matches[4]
+cmd = "printCmdLine('kaufe "..matches[2] .. "')"
+local note = string.trim(matches[3]).." ("..matches[4]..")"
+local space = ""
+
+if #matches[2] == 1 then space = " " end
+
+cechoLink("containerConsole", "&lt;white&gt;  ".. space .. matches[2] .. ". " .. match, cmd, "", true)
+cecho("containerConsole", " | ")
+
+--selectString(match, 1)
+--setHexFgColor("FFFFFF")
+--setUnderline(true)
+-- setBold(true)
+--setLink("", "printCmdLine('"..cmd.."')", note)
+
+space = ""
+if #matches[5] == 1 then space = " " end
+
+match = matches[6] .. " " .. matches[7]
+cmd = "printCmdLine('kaufe "..matches[5] .. "')"
+note = string.trim(matches[6]).." ("..matches[7]..")"
+
+cechoLink("containerConsole", space .. matches[5] .. ". " .. match, cmd, "", true)
+cecho("containerConsole", "&lt;reset&gt;\n")
+
+--selectString(match, 1)
+--setHexFgColor("FFFFFF")
+--setUnderline(true)
+-- setBold(true)
+--setLink("", "printCmdLine('"..cmd.."')", note)
+</script>
+				<triggerType>0</triggerType>
+				<conditonLineDelta>0</conditonLineDelta>
+				<mStayOpen>0</mStayOpen>
+				<mCommand></mCommand>
+				<packageName></packageName>
+				<mFgColor>#ff0000</mFgColor>
+				<mBgColor>#ffff00</mBgColor>
+				<mSoundFile></mSoundFile>
+				<colorTriggerFgColor>#000000</colorTriggerFgColor>
+				<colorTriggerBgColor>#000000</colorTriggerBgColor>
+				<regexCodeList>
+					<string>^\s+(\d+)\.\s(.+)\s+(\d+)\s\|\s+(\d+)\.\s(.+)\s+(\d+)$</string>
+				</regexCodeList>
+				<regexCodePropertyList>
+					<integer>1</integer>
+				</regexCodePropertyList>
+			</Trigger>
+			<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="yes" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+				<name>Warenliste - Zeile#3</name>
+				<script>if not inShoppingList then
+	cecho("containerConsole", "\n\n&lt;yellow&gt;    __--==[ Angebot ]==--__&lt;reset&gt;\n\n")
+end
+
+inShoppingList = true
+
+local match = string.trim(matches[1])
+local cmd = "printCmdLine('kaufe "..matches[2] .. "')"
+local space = ""
+
+if #matches[2] &lt; 2 then space = " " end
+
+cechoLink("containerConsole", space .. "&lt;white&gt;  " .. match .. "&lt;reset&gt;", cmd, "", true)
+cecho("containerConsole", "\n")
+
+--moveCursorEnd("containerConsole")
+</script>
+				<triggerType>0</triggerType>
+				<conditonLineDelta>0</conditonLineDelta>
+				<mStayOpen>0</mStayOpen>
+				<mCommand></mCommand>
+				<packageName></packageName>
+				<mFgColor>#ff0000</mFgColor>
+				<mBgColor>#ffff00</mBgColor>
+				<mSoundFile></mSoundFile>
+				<colorTriggerFgColor>#000000</colorTriggerFgColor>
+				<colorTriggerBgColor>#000000</colorTriggerBgColor>
+				<regexCodeList>
+					<string>^ \s*(\d+)\. (.+) (\d+) \(ca\. (\d\.\d) Kg\) \[(.+)\]\s+(\**)</string>
+				</regexCodeList>
+				<regexCodePropertyList>
+					<integer>1</integer>
+				</regexCodePropertyList>
+			</Trigger>
+		</TriggerGroup>
+	</TriggerPackage>
+</MudletPackage>
