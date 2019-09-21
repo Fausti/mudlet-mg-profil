@@ -1,0 +1,1376 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE MudletPackage>
+<MudletPackage version="1.001">
+	<ScriptPackage>
+		<ScriptGroup isActive="yes" isFolder="yes">
+			<name>Morgengrauen UI</name>
+			<packageName></packageName>
+			<script>MG = MG or {
+	filePath = "D:/Morgengrauen/",
+	useGfxMapper = true,
+}</script>
+			<eventHandlerList />
+			<ScriptGroup isActive="yes" isFolder="yes">
+				<name>Automapping</name>
+				<packageName></packageName>
+				<script>function addCmdAlias(cmd)
+	if exists("#" .. cmd, "alias") == 0 then
+    tempAlias("^#".. cmd .."(.*)$", [[OnCommand()]])
+	end
+end
+
+addCmdAlias("map")
+addCmdAlias("room")
+addCmdAlias("exit")
+addCmdAlias("area")
+
+function OnCommand()
+	local cmd_map = {
+		help 		= cmd_map_help,
+		new 		= cmd_map_new,
+		info		= cmd_map_info,
+		zoom    = cmd_map_zoom,
+		load    = cmd_map_load,
+		save    = cmd_map_save,
+	}
+	
+	local cmd_area = {
+		set 		= cmd_area_set,
+	}
+	
+	local cmd_room = {
+		symbol	= cmd_room_symbol,
+		name 		= cmd_room_name,
+		["type"]    = cmd_room_type,
+	}
+	
+	local cmd_exit = {
+	}
+
+	local args = parse_input(matches[1])
+
+	if string.match(args[1] ,"#map") then
+		-- ohne Argumente
+		if #args == 1 then
+			cmd_map_help(args)
+			return
+		end
+		
+		local cmd = cmd_map[args[2]]
+		if not cmd then
+			cmd_map_help(args)
+			return
+		end
+		
+		cmd(args)
+	elseif string.match(args[1] ,"#area") then
+		-- ohne Argumente
+		if #args == 1 then
+			cmd_map_help(args)
+			return
+		end
+		
+		local cmd = cmd_area[args[2]]
+		if not cmd then
+			cmd_map_help(args)
+			return
+		end
+		
+		cmd(args)
+	elseif string.match(args[1] ,"#room") then
+		-- ohne Argumente
+		if #args == 1 then
+			cmd_map_help(args)
+			return
+		end
+		
+		local cmd = cmd_room[args[2]]
+		if not cmd then
+			cmd_map_help(args)
+			return
+		end
+		
+		cmd(args)
+	elseif string.match(args[1] ,"#exit") then
+		-- ohne Argumente
+		if #args == 1 then
+			cmd_map_help(args)
+			return
+		end
+		
+		local cmd = cmd_exit[args[2]]
+		if not cmd then
+			cmd_map_help(args)
+			return
+		end
+		
+		cmd(args)
+	end
+end
+
+function cmd_map_help(args)
+	cecho("&lt;green&gt;Morgengrauen Automapper - Version 0.1\n")
+	print("")
+	print("#map zoom")
+	print("#map save")
+	print("#map load")
+	print("")
+	print('#room name     "Raumname"')
+	print('#room symbol   "Symbol"')
+	print("")
+	print('#area set      "Areaname"')
+	print("")
+end
+
+function cmd_map_new(args)
+	cecho("&lt;green&gt;Erstelle neue Karte.\n")
+	MAP.clear()
+	draw_map()
+end
+
+function cmd_map_info(args)
+	display(MAP.current_room)
+end
+
+function cmd_map_zoom(args)
+	if mapZoom == 1 then
+		mapZoom = 0.75
+	else
+		mapZoom = 1
+	end
+	
+	draw_map()
+end
+
+function cmd_map_load(args)
+	MAP.load()
+end
+
+function cmd_map_save(args)
+	MAP.save()
+end
+
+function cmd_room_name(args)
+	MAP.setRoomName(MAP.current_room.id, args[3], true)
+	draw_map()
+end
+
+function cmd_room_type(args)
+	MAP.setRoomType(MAP.current_room.id, args[3])
+	draw_map()
+end
+
+function cmd_room_symbol(args)
+	MAP.setRoomSymbol(MAP.current_room.id, args[3])
+	draw_map()
+end
+
+function cmd_area_set(args)
+	MAP.setRoomArea(MAP.current_room.id, args[3], true)
+	draw_map()
+end
+
+function generateAreaID()
+	
+end
+
+function parse_input(input)
+   if not input then return nil end
+
+   local args = {}
+
+   local e = 0
+   while true do
+       local b = e+1
+       b = input:find("%S",b)
+       if b==nil then break end
+       if input:sub(b,b)=="'" then
+           e = input:find("'",b+1)
+           b = b+1
+       elseif input:sub(b,b)=='"' then
+           e = input:find('"',b+1)
+           b = b+1
+       else
+           e = input:find("%s",b+1)
+       end
+       if e==nil then e=#input+1 end
+       table.insert(args, ltrim(input:sub(b,e-1)))
+   end
+
+   return args
+end
+
+function ltrim(s)
+  return s:match'^%s*(.*)'
+end</script>
+				<eventHandlerList />
+				<Script isActive="yes" isFolder="no">
+					<name>OnRoomInfo</name>
+					<packageName></packageName>
+					<script>function OnRoomInfo()
+	if not MAP then return end
+	
+	local data = gmcp.MG.room.info
+	
+	-- Haben wir den Raum über einen Standardausgang betreten?
+	-- Dann verbinden wir die Räume...
+	
+	if last_movement then
+		if MAP.current_room then
+			MAP.setExit(MAP.current_room.id, last_movement, data.id)
+		end
+	end
+	
+	local last_room = MAP.current_room
+	
+	MAP.current_room = MAP.getRoom(data.id)
+	if not MAP.current_room then
+		MAP.current_room = MAP.createRoom(data.id)
+	end
+	
+	-- display(data)
+	
+	MAP.setRoomName(MAP.current_room.id, stripchars(data.short, "."))
+		
+	-- für die Area/Domain muss ich eine bessere Lösung finden
+	MAP.setRoomArea(MAP.current_room.id, data.domain)
+	
+	if data.exits then
+		for _, v in pairs(data.exits) do
+			local d = MAP.translateExit(v)
+			if not d then d = v end
+			
+			local target = 0
+			if last_room then
+				if MAP.reverseExit(last_movement) == d then
+					target = last_room.id
+				end
+			end
+			
+			MAP.setExit(MAP.current_room.id, d, target)
+		end
+	end
+	
+	if MG.useGfxMapper then
+		draw_map()
+	end
+	-- map.debug()
+end
+
+function stripchars(str, chrs)
+   local s = str:gsub("["..chrs:gsub("%W","%%%1").."]", '')
+   return s
+end</script>
+					<eventHandlerList>
+						<string>gmcp.MG.room.info</string>
+					</eventHandlerList>
+				</Script>
+				<Script isActive="yes" isFolder="no">
+					<name>Kartendaten</name>
+					<packageName></packageName>
+					<script>MAP = MAP or {
+	current_room = nil,
+	last_movement = "",
+	rooms = {},
+	last_visited = {},
+}
+
+local translated_exits = {
+	n = "n",
+	s = "s",
+	o = "o",
+	w = "w",
+	
+	nw = "nw",
+	no = "no",
+	sw = "sw",
+	so = "so",
+	
+	unten = "unten",
+	oben = "oben",
+	
+	norden = "n",
+	sueden = "s",
+	osten = "o",
+	westen = "w",
+	
+	nordwesten = "nw",
+	nordosten = "no",
+	suedwesten = "sw",
+	suedosten = "so",
+}
+
+local reverse_exit = {
+	n = "s",
+	s = "n",
+	w = "o",
+	o = "w",
+	
+	no = "sw",
+	sw = "no",
+	nw = "so",
+	so = "nw",
+	
+	unten = "oben",
+	oben = "unten",
+}
+
+function MAP.clear()
+	MAP.rooms = {}
+	MAP.current_room = nil
+end
+
+function MAP.reverseExit(direction)
+	return reverse_exit[direction]
+end
+
+function MAP.translateExit(direction)
+	return translated_exits[direction]
+end
+
+function MAP.createRoom(uid)
+	local r = {
+		id = uid,
+		
+		name = "unbekannt",
+		locked_name = false,
+		area = "unbekannt",
+		locked_area = false,
+		
+		exits = {
+		},
+		
+		style = {
+			symbol = "",
+			form = "",
+		},
+	}
+	
+	MAP.rooms[uid] = r
+	
+	return r
+end
+
+function MAP.getRoom(uid)
+	return MAP.rooms[uid]
+end
+
+function MAP.setExit(uid, dir, target)
+	local r = MAP.getRoom(uid)
+	if not r then return end
+	
+	if r.exits[dir] then
+		if target == 0 then
+			return
+		end
+	end
+	
+	r.exits[dir] = {target=target}
+end
+
+function MAP.setRoomSymbol(uid, symbol)
+	local r = MAP.getRoom(uid)
+	if not r then return end
+	
+	r.style.symbol = symbol
+end
+
+function MAP.setRoomType(uid, form)
+	local r =  MAP.getRoom(uid)
+	if not r then return end
+	
+	r.style.form = form
+end
+
+function  MAP.setRoomArea(uid, area, lock)
+	local r =  MAP.getRoom(uid)
+	if not r then return end
+	
+	if not r.locked_area then
+		r.area = area
+		if lock then r.locked_area = true end
+	end
+end
+
+function MAP.setRoomName(uid, name, lock)
+	local r = MAP.getRoom(uid)
+	if not r then return end
+	
+	if not r.locked_name then
+		r.name = name
+		if lock then r.locked_name = true end
+	end
+end
+
+function MAP.debug()
+	display(map.rooms)
+end
+
+function MAP.save()
+	table.save("D:/Morgengrauen/karte.lua", MAP.rooms)
+end
+
+function MAP.load()
+	MAP.rooms = MAP.rooms or {}
+	
+	if io.exists("D:/Morgengrauen/karte.lua") then
+  	table.load("D:/Morgengrauen/karte.lua", MAP.rooms) -- using / is OK on Windows too.
+	end
+end
+
+MAP.load()</script>
+					<eventHandlerList />
+				</Script>
+				<Script isActive="yes" isFolder="no">
+					<name>Kartenfenster (grafisch)</name>
+					<packageName></packageName>
+					<script>MapRendererGfx = MapRendererGfx or {}
+
+local coords = {
+	n = {x =  0, y = -1},
+	s = {x =  0, y =  1},
+	w = {x = -1, y =  0},
+	o = {x =  1, y =  0},
+	
+	nw = {x = -1, y = -1},
+	no = {x =  1, y = -1},
+	sw = {x = -1, y =  1},
+	so = {x =  1, y =  1},
+	
+	unten = {x =  1, y = 0},
+	oben =  {x = -1, y = 0},
+}
+
+mapZoom = 0.75
+
+local styles = {
+	exit = [[
+		border: 0px solid white;
+	]],
+	
+	room_normal = [[
+		border-top: 1px solid white;
+		border-left: 1px solid white;
+		border-bottom: 1px solid #aca899;
+		border-right: 1px solid #aca899;
+		background-color: black;
+	]],
+	
+	room_current = [[
+		border-top: 1px solid red;
+		border-left: 1px solid red;
+		border-bottom: 1px solid red;
+		border-right: 1px solid red;
+		background-color: black;
+	]],
+	
+	room_circle = [[
+		border-top: 1px solid white;
+		border-left: 1px solid white;
+		border-bottom: 1px solid #aca899;
+		border-right: 1px solid #aca899;
+		border-radius: 12px;
+	]],
+	
+	room_another_area = [[
+		border-top: 1px dotted white;
+		border-left: 1px dotted white;
+		border-bottom: 1px dotted #aca899;
+		border-right: 1px dotted #aca899;
+	]],
+	
+	room_borderless = [[
+		border: 0px solid white;
+	]],
+}
+
+
+local tile_size = 25
+
+local map_width = GUI.sidebarRight_w
+local map_height = GUI.containerMap_h
+
+local center_x = (map_width / 2) - (tile_size / 2)
+local center_y = (map_height / 2) - (tile_size / 2)
+
+local used_labels = {}
+local free_labels = {}
+local count_labels = 0
+
+local drawn_rooms = {}
+
+map_radius_x = 17
+map_radius_y = 9
+
+function getLabel()
+	local label
+	
+	-- echo("* Label angefordert *\n")
+	-- echo("free labels: " .. #free_labels .. "\n")
+	-- echo("used labels: " .. #used_labels .. "\n")
+	
+	label = table.remove(free_labels)
+	
+	if not label then
+		label = Geyser.Label:new({
+			name = "map symbol #" .. count_labels,
+			width = tile_size,
+			height = tile_size,
+		}, GUI.containerMap)
+		
+		count_labels = count_labels + 1
+	end
+	
+	table.insert(used_labels, label)
+	label:show()
+	
+	return label
+end
+
+function clearLabels()
+	-- benutzte Label in die Liste freier Label packen
+	-- und verstecken
+	
+	for _, ll in pairs(used_labels) do
+		ll:setStyleSheet([[
+			border-radius: 0px;
+		]])
+		
+		ll:echo("")
+		ll:setBackgroundImage("")
+		ll:setOnEnter("")
+		ll:setFontSize(8)
+		ll:hide()
+		
+		table.insert(free_labels, ll)
+	end
+	
+	used_labels = {}
+end
+
+function outsideOfMap(x, y)
+	local lx = center_x + tile_size * x
+	local ly = center_y + tile_size * y
+	local lw = lx + tile_size
+	local lh = ly + tile_size
+	
+	if lx &lt; 0 or ly &lt; 0 or lw &lt; 0 or lh &lt; 0 then
+		return true
+	elseif lx &gt;= map_width or ly &gt;= map_height or lw &gt;= map_width or lh &gt;= map_height then
+		return true
+	end
+	
+	return false
+end
+
+function create_room_label(x, y, char, style, form)
+	-- Nicht ausserhalb des Fensters zeichnen...
+	-- Geyser hat sich da etwas affig!
+	if outsideOfMap(x, y) then return end
+	
+	local lx = center_x + tile_size * x
+	local ly = center_y + tile_size * y
+	
+	local tile = getLabel()
+	tile:move(lx, ly)
+	tile:setStyleSheet(styles[style])
+	
+	if form then
+		if form ~= "" then
+			tile:setBackgroundImage(GUI.getImage(form));
+		end
+	end
+	
+	if char then
+		if char ~= "" then
+			tile:echo("&lt;center&gt;" .. char .. "&lt;/center&gt;")
+		end
+	end
+	
+	tile:raise()
+	
+	return tile
+end
+
+function create_exit_label(x, y, type, stub)
+	-- Nicht ausserhalb des Fensters zeichnen...
+	-- Geyser hat sich da etwas affig!
+	if outsideOfMap(x, y) then return end
+	
+	local lx = center_x + tile_size * x
+	local ly = center_y + tile_size * y
+	
+	local tile = getLabel()
+	tile:move(lx, ly)
+	tile:setStyleSheet(styles["exit"])
+	
+	local img = GUI.getImage(type)
+	
+	if not img then
+		tile:setBackgroundImage(type);
+	else
+		if stub then img = GUI.getImage("stub_" .. type) end -- andere Area
+		
+		tile:setBackgroundImage(img);
+	end
+	
+	tile:lower()
+	
+	return tile
+end
+
+function draw_map()
+	if not mapperReady then return end
+	
+	clearLabels()
+	
+	-- Liste gezeichneter Räume zurücksetzen!
+	drawn_rooms = {}
+	
+	-- display(current_room)
+	-- if not current_room then return end
+	
+	draw_room(MAP.current_room, 0, 0, nil, 0)
+	
+	-- Spielerposition zeichnen
+	
+	local circle = getLabel()
+	circle:move(center_x, center_y)
+	circle:setStyleSheet([[
+		border: 0px solid white;
+	]])
+	circle:setBackgroundImage(GUI.getImage("player"));
+	circle:raise()
+	
+	if MAP.current_room then
+		MapRendererGfx.labelRoomName:echo("&lt;center&gt;__--==[    " .. MAP.current_room.name .. "    ]==--__&lt;/center&gt;")
+		MapRendererGfx.labelRoomName:raise()
+		MapRendererGfx.labelAreaName:echo("&lt;center&gt;--==[    " .. MAP.current_room.area .. "    ]==--&lt;/center&gt;")
+		MapRendererGfx.labelAreaName:raise()
+	end
+	
+	GUI.borderMap:raise()
+	
+	-- echo("free labels: " .. #free_labels .. "\n")
+	-- echo("used labels: " .. #used_labels .. "\n")
+end
+
+function OnHover(label, text)
+	-- display(label)
+end
+
+function draw_room(r, x, y, from, count)
+	if x &lt; -map_radius_x or x &gt; map_radius_x or y &lt; -map_radius_y or y &gt; map_radius_y then return end
+	
+	if not r then return end
+	
+	if not x then x = 0 end
+	if not y then y = 0 end
+	
+	-- bereits gezeichnet? raus hier...
+	if drawn_rooms[r.id] then return end
+	drawn_rooms[r.id] = true
+	
+	-- echo("Zeichne Raum #" .. r.id)
+	local style = "room_normal"
+	
+	if r.id == MAP.current_room.id then 
+		style = "room_current"
+	end
+	
+	if r.style.form then
+		if r.style.form ~= "" then
+			style = "room_borderless"
+		end
+	end
+
+	-- if r.area ~= map.current_room.area then style = "room_another_area" end
+	
+	local l = create_room_label(x, y, r.style.symbol, style, r.style.form)
+	if l then
+		l:setClickCallback("OnRoomClick", r.id)
+	else
+		return
+	end
+	
+	-- Ausgänge nur wenn Raum in selber Area wie der Raum
+	-- in dem wir uns befinden!
+	
+	if r.area ~= MAP.current_room.area then
+		-- Aber ein "Eingang" bitte noch zeichnen... sieht sonst doof aus
+		-- local coord = coords[map.reverseExit(from)]
+		-- if coord then
+			-- create_exit_label(x + coord.x, y + coord.y, map.reverseExit(from))
+		-- end
+		
+		return 
+	end
+	
+	for dir, exit in pairs(r.exits) do
+		local coord = coords[dir]
+		if coord then
+			local wrong_area = false
+			local nr = MAP.getRoom(exit.target)
+			local nx = x + coord.x * mapZoom
+			local ny = y + coord.y * mapZoom
+			
+			if nr then
+				if nr.area ~= MAP.current_room.area then wrong_area = true end
+			end
+			
+			l = create_exit_label(nx, ny, dir, wrong_area)
+			
+			if exit.target == 0 then
+				-- Symbol für fehlenden Raum zeichnen?
+			elseif dir ~= "unten" and dir ~= "oben" then
+				-- local nr = map.getRoom(exit.target)
+				if not nr then
+					-- Symbol für fehlenden Raum zeichnen?
+				else
+					if not wrong_area then
+						if l then -- nur neue Räume zeichnen wenn Ausgang nicht außerhalb der Karte
+							draw_room(nr, nx + coord.x * mapZoom, ny + coord.y * mapZoom, dir, count + 1)
+						end
+					end
+				end
+			end
+			
+		end
+	end
+end
+
+function OnRoomClick(uid, event)
+	-- display(event)
+	
+	if event.button == "RightButton" then
+		local r = MAP.getRoom(uid)
+		if not r then return end
+		
+		if r.style.form == "" or r.style.form == nil then
+			MAP.setRoomType(uid, "street")
+		else
+			MAP.setRoomType(uid, "")
+		end
+		
+		draw_map()
+	else
+	end
+end
+
+function MapRendererGfx_init()
+	MapRendererGfx.labelRoomName = Geyser.Label:new({
+		x = 0,
+		y = 0,
+		width = "100%", 
+		height = 16
+	}, GUI.containerMap)
+
+	MapRendererGfx.labelRoomName:echo("&lt;center&gt;" .. "--==[ Raumname ]==--" .. "&lt;/center&gt;")
+
+	MapRendererGfx.labelAreaName = Geyser.Label:new({
+		x = 0,
+		y = -16,
+		width = "100%", 
+		height = 16
+	}, GUI.containerMap)
+
+	MapRendererGfx.labelAreaName:echo("&lt;center&gt;" .. "--==[ Gebietsname ]==--" .. "&lt;/center&gt;")
+	
+	mapperReady = true
+	
+	PrintInfo("Morgengrauen - Automapper geladen...")
+end
+--containerMap:flash()
+</script>
+					<eventHandlerList />
+				</Script>
+				<Script isActive="yes" isFolder="no">
+					<name>OnSendRequest</name>
+					<packageName></packageName>
+					<script>-- Hier fangen wir eigegebene Befehle ab und merken
+-- sie uns FALLS sie eine Standardrichtung sind, damit
+-- der Automapper die Räume verbinden kann.
+
+function OnSendRequest(event, command)
+	if not MAP then return end
+	
+	local d = MAP.translateExit(command)
+	
+	if d then
+		last_movement = d
+	end
+end</script>
+					<eventHandlerList>
+						<string>sysDataSendRequest</string>
+					</eventHandlerList>
+				</Script>
+			</ScriptGroup>
+			<ScriptGroup isActive="yes" isFolder="yes">
+				<name>GMCP Protokoll</name>
+				<packageName></packageName>
+				<script>-------------------------------------------------
+--         Put your Lua functions here.        --
+--                                             --
+-- Note that you can also use external scripts --
+-------------------------------------------------
+</script>
+				<eventHandlerList />
+				<Script isActive="yes" isFolder="no">
+					<name>OnInitGMCP</name>
+					<packageName></packageName>
+					<script>function OnInitGMCP(event) 
+    sendGMCP( [[Core.Supports.Set [ "MG.char 1", "MG.room 1", "comm.channel 1" ] ]])
+end</script>
+					<eventHandlerList>
+						<string>sysProtocolEnabled</string>
+					</eventHandlerList>
+				</Script>
+				<Script isActive="yes" isFolder="no">
+					<name>OnChannel</name>
+					<packageName></packageName>
+					<script>function OnChannel()
+	local data = gmcp.comm.channel
+	
+	parse_message(data.msg, data.chan, data.player)
+end
+
+function parse_message(msg, wo, wer)
+	local lines = string.split(msg, "\n")
+	local link = 'printCmdLine("-' .. wo .. '\'")'
+
+	for k, v in pairs(lines) do
+		was = rex.match(v, "\\[.+:.+\\] (.+)")
+		
+		if was then
+			if k &gt; 1 then
+				local size = 4 + #wo + #wer
+				v = string.rep(" ", size) .. was
+			else
+				v ="[&lt;green&gt;"..wo.."&lt;reset&gt;:&lt;yellow&gt;"..wer.."&lt;reset&gt;] &lt;white&gt;"..was
+			end
+			
+			print_message("&lt;white&gt;"..v.."&lt;reset&gt;\n", link)
+		else
+			if k == 1 then
+				v = string.gsub(v, wo, "&lt;green&gt;"..wo.."&lt;reset&gt;", 1)
+				v = string.gsub(v, wer, "&lt;yellow&gt;"..wer.."&lt;reset&gt;", 1)
+			end
+			
+			print_message("&lt;white&gt;"..v.."&lt;reset&gt;", link)
+			
+			-- alle Zeilen bis auf die letzte bekommen noch ein kleines Enterchen &lt;3
+			if k ~= #lines then
+				print_message("\n")
+			end
+				
+		end
+	end
+end
+
+function print_message(msg, link)
+	-- Sicher ist sicher...
+	if GUI.containerConsole ~= nil then
+		if GUI.containerConsole.echo ~= nil then
+			if not link then
+				cecho("containerConsole", msg)
+			else
+				cechoLink("containerConsole", msg, link, "", true)
+			end
+			-- GUI.containerConsole:cecho(msg)
+		end
+	end
+	
+	if not link then
+		cecho(msg)
+	else
+		cechoLink(msg, link, "", true)
+	end
+end
+
+function textWrap( str, limit, indent, indentFirst )
+	limit = limit or 72
+  indent = indent or ""
+  indentFirst = indentFirst or indent
+ 
+  local here = 1 - #indentFirst
+  return indentFirst .. str:gsub( "(%s+)()(%S+)()",
+  	function( sp, st, word, fi )
+    	if fi - here &gt; limit then
+      	here = st - #indent
+        return "\n" .. indent .. word
+      end
+    end
+	)
+end</script>
+					<eventHandlerList>
+						<string>gmcp.comm.channel</string>
+					</eventHandlerList>
+				</Script>
+				<Script isActive="yes" isFolder="no">
+					<name>OnMGVitals</name>
+					<packageName></packageName>
+					<script>function OnMGVitals()
+	local hp = gmcp.MG.char.vitals.hp
+	local max_hp = gmcp.MG.char.maxvitals.max_hp
+	local per_hp = (100 / max_hp) * hp
+	
+	local mp = gmcp.MG.char.vitals.sp
+	local max_mp = gmcp.MG.char.maxvitals.max_sp
+	local per_mp = (100 / max_mp) * mp
+	
+	local c_green = {
+		r = 0,
+		g = 1,
+		b = 0
+	}
+	
+	local c_yellow = {
+		r = 1,
+		g = 1,
+		b = 0
+	}
+	
+	local c_red = {
+		r = 1,
+		g = 0,
+		b = 0
+	}
+	
+	if GUI.hpBar then
+		GUI.hpBar:setValue(hp, max_hp)
+		GUI.hpBar.text:echo("&lt;center&gt;" .. hp .. " / " .. max_hp, "black", "b")
+		
+		local r = 0
+		local g = 0
+		local b = 0
+	
+		if per_hp &gt;= 50 then
+			local p = ((per_hp - 50) * 100) / 50
+			r = fadeColor(c_yellow.r, c_green.r, p)
+			g = fadeColor(c_yellow.g, c_green.g, p)
+			b = fadeColor(c_yellow.b, c_green.b, p)
+		else
+			local p = (per_hp * 100) / 50
+			r = fadeColor(c_red.r, c_yellow.r, p)
+			g = fadeColor(c_red.g, c_yellow.g, p)
+			b = fadeColor(c_red.b, c_yellow.b, p)
+		end
+		
+		GUI.hpBar:setColor(r * 255, g * 255, b * 255)
+		
+		GUI.spBar:setValue(mp, max_mp, "&lt;center&gt;" .. mp .. " / " .. max_mp)
+		GUI.spBar:setColor(0, 0, 255)
+		
+		GUI.hpBar:flash()
+	end
+end
+
+function testBar(hp)
+	local c_green = {
+		r = 0,
+		g = 1,
+		b = 0
+	}
+	
+	local c_yellow = {
+		r = 1,
+		g = 1,
+		b = 0
+	}
+	
+	local c_red = {
+		r = 1,
+		g = 0,
+		b = 0
+	}
+	
+	GUI.hpBar:setValue(hp)
+	
+	local r = 0
+	local g = 0
+	local b = 0
+	
+	if hp &gt;= 50 then
+		local p = ((hp - 50) * 100) / 50
+		r = fadeColor(c_yellow.r, c_green.r, p)
+		g = fadeColor(c_yellow.g, c_green.g, p)
+		b = fadeColor(c_yellow.b, c_green.b, p)
+	else
+		local p = (hp * 100) / 50
+		r = fadeColor(c_red.r, c_yellow.r, p)
+		g = fadeColor(c_red.g, c_yellow.g, p)
+		b = fadeColor(c_red.b, c_yellow.b, p)
+	end
+		
+	GUI.hpBar:setColor(r * 255, g * 255, b * 255)
+end
+
+function fadeColor(c1, c2, percent)
+	local c3 = c1 * (100 - percent) / 100.0 + c2 * percent / 100.0
+	
+	return c3
+end
+
+function round(n)
+	return n % 1 &gt;= 0.5 and math.ceil(n) or math.floor(n)
+end</script>
+					<eventHandlerList>
+						<string>gmcp.MG.char.vitals</string>
+					</eventHandlerList>
+				</Script>
+			</ScriptGroup>
+			<ScriptGroup isActive="yes" isFolder="yes">
+				<name>GUI</name>
+				<packageName></packageName>
+				<script>GUI = GUI or {
+	sidebarLeft_w = 16,
+	sidebarLeft_h = "100%",
+		
+	--sidebarRight = {},
+	sidebarRight_w = 800,
+	sidebarRight_h = "100%",
+	
+	--containerMap = {},
+	containerMap_h = 425,
+	
+	bgMap = [[
+	           /\_/\_/\_/\_/\_/\_/\_/\_/\_/\_/\_/\_/\_/\_/\_/\_/\_/\_/\_/\_/\_/\_/\_/\_/\_      \\n
+           \* * * * *  * * * *   * *   * *    *    *    *         /*    *   *  *    * \       \\n
+           / * * * *  P O L A R G E B I E T                      | *  *  *   *  *  *  *\      \\n
+           \  * *    * *         *                                \  ~   *  ~    *  ~  *\     \\n
+    ______ /        * *                           /\  _            \_   ~  ~  ~  ~ ~  ~ ~|    \\n
+   /      \\  *  *                          /\_/\/  \/ \_            \ ~ ~ ~  ~ ~ ~ ~  ~/     \\n
+  /F E R N |\                              /     \   \   \      ^ ^ ^ \ ~ ~ ~    ~   ~ /      \\n
+ |         |/ ^    ^       W A L D       _/ ^ ^       \        ^ ^ ^ ^ | ~ ~   ~ ~ ~   \___   \\n
+ |W E S T  |\/_\^ /_\   ^              ^   ^ ^  ^ ^ ^ ~ G E B I R G E ^|~ ~ ~ ~ ~ ~ ~  ~   \  \\n
+  \  .    / / |/_\ |   /_\          ^ /_\ ^ ^ ^        ~ ~ ~ ~ ~   ^ ^ | ~ ~ ~    Verlorenes| \\n
+   \  ...| /    |       |          /_\ |                         ~ ~ ~ ~  ~  ~ ~ ~  Land    | \\n
+    \__ /./                                                    ^  ^    /~   ~ ~ ~ ~ ~  ____/  \\n
+         /.               " "        "   U N T E R W E L T            /~ ~ ~ ~ ~ ~ ~ ~/       \\n
+         |.           "  " " " " " "  "                 _____________/~ ~    ~ ~ ~    \       \\n
+         \ .       " "  " E B E N E "  " "   "           ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~  ~\      \\n
+          \ .          "           " "  "  "           \ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~    ~ ~ |     \\n
+          /_/\                         "  "   "         |~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ __/      \\n
+          \/\ \          ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~  ~ ~ ~ I N S E L N ~ /         \\n
+          /  \      @    @ @       . . . . . . . . . .  |~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~\___      \\n
+          \           @ @ @ @    . . .     .    .   . . | ~    N    ~    _________ ~ ~ ~\     \\n
+          /  D S C H U N G E L    . .  W U E S T E . . / ~     |     ~ ~/         \_____/     \\n
+          \     @   @            .  .  . .   .  . . . .|~   W--+--O   ~/                      \\n
+          /   @@ @ @   @@@         .  .  .. . .  .__ . / ~     |     ~/                       \\n
+          \__/\____/\_/\____/\_/\_/\_______/\____/  \_/ ~ ~    S   ~ /                        \\n
+	]],
+}
+
+function GUI.init()
+	setBorderBottom(16)
+	setBorderTop(16)
+	setBorderLeft(16 + 8)
+	setBorderRight(GUI.sidebarRight_w)
+	
+	GUI.containerMain = Geyser.HBox:new({
+		name = "containerMain",
+			
+		x = 0, 
+		y = 0,
+			
+		width = "100%", 
+		height = "100%"
+	})
+	
+	GUI.borderLeft = Geyser.Label:new({
+		name = "borderLeft",
+		x = 0,
+		y = 0,
+		width = 16,
+		height = "100%",
+		h_policy=Geyser.Fixed,
+	}, GUI.containerMain)
+	
+	GUI.containerNone = Geyser.VBox:new({
+		name = "containerNone",
+			
+		x = 0, 
+		y = 0,
+	}, GUI.containerMain)
+
+	GUI.sidebarRight = Geyser.VBox:new({
+		name = "sidebarRight",
+			
+		x = -GUI.sidebarRight_w, 
+		y = 0,
+			
+		width = GUI.sidebarRight_w, 
+		height = GUI.sidebarRight_h,
+		
+		h_policy=Geyser.Fixed,
+	}, GUI.containerMain)
+	
+	GUI.sidebarRightTop = Geyser.HBox:new({
+		name = "sidebarRightTop",
+		x = 0, 
+		y = 0,
+			
+		width = "100%", 
+		height = GUI.containerMap_h,
+			
+		v_policy=Geyser.Fixed,
+	}, GUI.sidebarRight)
+	
+	GUI.containerMap = Geyser.Container:new({
+		name = "containerMap",
+			
+		fontSize = 8,
+	}, GUI.sidebarRightTop)
+	
+	GUI.borderMap = Geyser.Label:new({
+		name = "borderMap",
+		
+		x = -16,
+		y = 0,
+		
+		width = 16,
+		height = "100%",
+		
+		h_policy=Geyser.Fixed,
+	}, GUI.sidebarRightTop)
+	
+	--GUI.labelConsole = Geyser.Label:new({
+	--	x = 0,
+	--	y = 0,
+		
+	--	width = "100%", 
+	--	height = 16,
+		
+	--	v_policy=Geyser.Fixed,
+	--}, GUI.sidebarRight)
+
+	-- GUI.labelConsole:echo("&lt;center&gt;" .. "--==[ Console ]==--" .. "&lt;/center&gt;")
+	
+	GUI.containerConsole = Geyser.MiniConsole:new({
+ 		name="containerConsole",
+ 		autoWrap = true,
+ 		scrollBar = true,
+	}, GUI.sidebarRight)
+	
+	GUI.containerNone2 = Geyser.Label:new({
+		name = "containerNone2",
+			
+		height = 16,
+			
+		v_policy=Geyser.Fixed,
+	}, GUI.sidebarRight)
+	
+	GUI.containerConsole:setColor("black")
+	GUI.containerConsole:setFont(getFont())
+	GUI.containerConsole:setFontSize(getFontSize())
+	
+	GUI.labelLeft = Geyser.Label:new({
+		name = "labelLeft",
+			
+		x = 0, 
+		y = 0,
+			
+		height = 16,
+		
+		v_policy=Geyser.Fixed,
+	}, GUI.containerNone)
+	
+	-- Über dem Mudoutput
+	GUI.containerNone3 = Geyser.Container:new({
+		name = "containerNone3",
+	}, GUI.containerNone)
+	-- GUI.containerNone3:setColor(32,32,32,100)
+	-- GUI.containerNone3:echo(GUI.bgMap)
+	
+	GUI.labelBottomLeft = Geyser.Label:new({
+		name = "labelBottomLeft",
+		height = 16,
+		
+		v_policy=Geyser.Fixed,
+	}, GUI.containerNone)
+	
+	-- Gaugeleiste
+	
+	GUI.containerBars = Geyser.HBox:new({
+		name = "containerBars",
+			
+		x = 0, 
+		y = -16,
+			
+		height = 16,
+		width = "100%",
+		
+		v_policy=Geyser.Fixed,
+	}, GUI.labelBottomLeft)
+	
+	GUI.hpBarPre = Geyser.Label:new({
+		name = "hpBarPre",
+		message = "__--=="
+	}, GUI.containerBars)
+	GUI.hpBarPre:setStyleSheet([[qproperty-alignment: 'AlignRight';]])
+	GUI.hpBarPre:setColor(32,32,32,255)
+	
+	GUI.hpBar = Geyser.Gauge:new({
+  	name="hpBar",
+  	
+		x=0, 
+		y=0,
+		
+		width="33%",
+  	h_policy=Geyser.Fixed,
+	}, GUI.containerBars)
+	
+	GUI.hpBarPost = Geyser.Label:new({
+		name = "hpBarPost",
+		message = "==--__"
+	}, GUI.containerBars)
+	GUI.hpBarPost:setStyleSheet([[qproperty-alignment: 'AlignLeft';]])
+	GUI.hpBarPost:setColor(32,32,32,255)
+	
+	GUI.spBarPre = Geyser.Label:new({
+		name = "spBarPre",
+		message = "__--=="
+	}, GUI.containerBars)
+	GUI.spBarPre:setStyleSheet([[qproperty-alignment: 'AlignRight';]])
+	GUI.spBarPre:setColor(32,32,32,255)
+	
+	GUI.spBar = Geyser.Gauge:new({
+  	name="spBar",
+  	
+		x=0, 
+		y=0,
+		
+		width="33%",
+  	h_policy=Geyser.Fixed,
+	}, GUI.containerBars)
+	
+	GUI.spBarPost = Geyser.Label:new({
+		name = "spBarPost",
+		message = "==--__"
+	}, GUI.containerBars)
+	GUI.spBarPost:setStyleSheet([[qproperty-alignment: 'AlignLeft';]])
+	GUI.spBarPost:setColor(32,32,32,255)
+	
+	GUI.borderMap:raise()
+	
+	registerAnonymousEventHandler("sysWindowResizeEvent", "GUI.OnWindowResize")
+	
+	PrintInfo("Morgengrauen - UI geladen...")
+	
+	if MG.useGfxMapper then
+		MapRendererGfx_init()
+	end
+end
+
+function GUI.OnWindowResize(event, x, y)
+	--GUI.containerBars:resize(getMainConsoleWidth(), nil)
+	--print(getMainConsoleWidth())
+end
+
+function GUI.getImage(name)
+	return MG.filePath .. "gfx/" .. name .. ".png"
+end</script>
+				<eventHandlerList />
+				<Script isActive="yes" isFolder="no">
+					<name>OnSysLoadEvent</name>
+					<packageName></packageName>
+					<script>function OnSysLoadEvent()
+	PrintInfo("Morgengrauen - Profil geladen...")
+	GUI.init()
+end</script>
+					<eventHandlerList>
+						<string>sysLoadEvent</string>
+					</eventHandlerList>
+				</Script>
+			</ScriptGroup>
+			<Script isActive="yes" isFolder="no">
+				<name>Debug- und Infoausgaben</name>
+				<packageName></packageName>
+				<script>function PrintInfo(...)
+	cecho("&lt;cyan&gt;[ INFO ]  - &lt;green&gt; " .. ... .. "\n")
+end
+
+function PrintOk(...)
+	cecho("&lt;green&gt;[  OK  ]  - &lt;orange&gt; " .. ... .. "\n")
+end
+
+function PrintError(...)
+	cecho("&lt;red&gt;[ FAIL ]  - &lt;cyan&gt; " .. ... .. "\n")
+end</script>
+				<eventHandlerList />
+			</Script>
+			<Script isActive="yes" isFolder="no">
+				<name>AppStyleSheet setzen</name>
+				<packageName></packageName>
+				<script>setAppStyleSheet[[
+	TConsole QToolBar {
+     background: black;
+  }
+  TConsole QToolButton {
+     background: black;
+     border-style: solid;
+     border-width: 2px;
+     border-color: black;
+     border-radius: 5px;
+     color: white;
+     margin: 2px;
+  }
+	
+	TConsole QDockWidget {
+     background: black;
+  }
+  TConsole QStatusBar {
+     background: black;
+  }
+	
+	TConsole QLineEdit {
+		background: black;
+		border: 0px solid black;
+	}
+	
+	TConsole QPlainTextEdit {
+		background: black;
+		border: 0px solid black;
+	}
+	
+  TConsole QScrollBar:vertical {
+      border: 0px solid grey;
+      background: #202020;
+      width: 8px;
+      margin: 22px 0 22px 0;
+  }
+  TConsole QScrollBar::handle:vertical {
+      background: #c0c0c0;
+      min-height: 20px;
+  }
+  TConsole QScrollBar::add-line:vertical {
+      border: 0px solid grey;
+      background: #202020;
+      height: 20px;
+      subcontrol-position: bottom;
+      subcontrol-origin: margin;
+  }
+  TConsole QScrollBar::sub-line:vertical {
+      border: 0px solid grey;
+      background: #202020;
+      height: 20px;
+      subcontrol-position: top;
+      subcontrol-origin: margin;
+  }
+  TConsole QScrollBar::up-arrow:vertical, TConsole QScrollBar::down-arrow:vertical {
+      border: 0px solid grey;
+      width: 3px;
+      height: 3px;
+      background: #c0c0c0;
+  }
+  TConsole QScrollBar::add-page:vertical, TConsole QScrollBar::sub-page:vertical {
+      background: none;
+  }
+	
+	
+  ]]</script>
+				<eventHandlerList />
+			</Script>
+		</ScriptGroup>
+	</ScriptPackage>
+</MudletPackage>
