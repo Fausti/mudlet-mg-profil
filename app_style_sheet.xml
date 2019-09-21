@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE MudletPackage>
+<MudletPackage version="1.001">
+	<ScriptPackage>
+		<Script isActive="yes" isFolder="no">
+			<name>AppStyleSheet setzen</name>
+			<packageName></packageName>
+			<script>setAppStyleSheet[[
+	TConsole QToolBar {
+     background: black;
+  }
+  TConsole QToolButton {
+     background: black;
+     border-style: solid;
+     border-width: 2px;
+     border-color: black;
+     border-radius: 5px;
+     color: white;
+     margin: 2px;
+  }
+	
+	TConsole QDockWidget {
+     background: black;
+  }
+  TConsole QStatusBar {
+     background: black;
+  }
+	
+	TConsole QLineEdit {
+		background: black;
+		border: 0px solid black;
+	}
+	
+	TConsole QPlainTextEdit {
+		background: black;
+		border: 0px solid black;
+	}
+	
+  TConsole QScrollBar:vertical {
+      border: 0px solid grey;
+      background: #202020;
+      width: 8px;
+      margin: 22px 0 22px 0;
+  }
+  TConsole QScrollBar::handle:vertical {
+      background: #c0c0c0;
+      min-height: 20px;
+  }
+  TConsole QScrollBar::add-line:vertical {
+      border: 0px solid grey;
+      background: #202020;
+      height: 20px;
+      subcontrol-position: bottom;
+      subcontrol-origin: margin;
+  }
+  TConsole QScrollBar::sub-line:vertical {
+      border: 0px solid grey;
+      background: #202020;
+      height: 20px;
+      subcontrol-position: top;
+      subcontrol-origin: margin;
+  }
+  TConsole QScrollBar::up-arrow:vertical, TConsole QScrollBar::down-arrow:vertical {
+      border: 0px solid grey;
+      width: 3px;
+      height: 3px;
+      background: #c0c0c0;
+  }
+  TConsole QScrollBar::add-page:vertical, TConsole QScrollBar::sub-page:vertical {
+      background: none;
+  }
+	
+	
+  ]]</script>
+			<eventHandlerList />
+		</Script>
+	</ScriptPackage>
+</MudletPackage>

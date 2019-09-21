@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE MudletPackage>
+<MudletPackage version="1.001">
+	<TriggerPackage>
+		<TriggerGroup isActive="yes" isFolder="yes" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+			<name>Ausgänge einfärben</name>
+			<script></script>
+			<triggerType>0</triggerType>
+			<conditonLineDelta>0</conditonLineDelta>
+			<mStayOpen>0</mStayOpen>
+			<mCommand></mCommand>
+			<packageName></packageName>
+			<mFgColor>#ff0000</mFgColor>
+			<mBgColor>#ffff00</mBgColor>
+			<mSoundFile></mSoundFile>
+			<colorTriggerFgColor>#000000</colorTriggerFgColor>
+			<colorTriggerBgColor>#000000</colorTriggerBgColor>
+			<regexCodeList />
+			<regexCodePropertyList />
+			<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="yes" isPerlSlashGOption="yes" isColorizerTrigger="no" isFilterTrigger="yes" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+				<name>Ein-/zweizeilig</name>
+				<script>local colorStart = "00FF00" -- Beginn der Zeile
+local colorExit = "FFFFFF"  -- Ausgänge
+
+local function parse_exits(line)
+   if not line then return nil end
+   
+   line = stripchars(line, ",.")
+
+   local args = {}
+
+   local e = 0
+   while true do
+       local b = e+1
+       b = line:find("%S",b)
+       if b==nil then break end
+       e = line:find("%s",b+1)
+       if e==nil then e=#line+1 end
+
+       local found = line:sub(b,e-1)
+       if found ~= "und" then
+         table.insert(args, found)
+       end
+   end
+
+   return args
+end
+
+local function stripchars(str, chrs)
+   local s = str:gsub("["..chrs:gsub("%W","%%%1").."]", '')
+   return s
+end
+	
+local multi = false
+local tmp
+	
+-- keine Ausgänge --
+	
+if not matches then return end
+if not multimatches then return end
+	
+if #matches &gt; 0 then
+	selectCurrentLine()
+	setHexFgColor(colorStart)
+	return
+end
+	
+-- Ein-/zweizeilige Ausgänge --
+	
+if multimatches[1][1] == multimatches[2][1] then
+		
+	-- Einzeilig --
+	multi = false
+	tmp = multimatches[1][3]
+	
+else
+	
+	-- Zweizeilig --
+	multi = true
+	tmp = multimatches[1][3] .. " " .. multimatches[2][2]
+	
+end
+	
+-- Anfang der Ausgangsanzeige einfärben
+if multi then
+	moveCursorUp()
+end
+	
+selectString(multimatches[1][2], 1)
+setHexFgColor(colorStart)
+		
+-- Ausgänge in Liste packen
+local exits_found = parse_exits(tmp, ",.")
+	
+-- gefundene Ausgänge in Hyperlinks umwandeln
+for _, v in pairs(exits_found) do
+	selectString(v, 1)
+	setHexFgColor(colorExit)
+	setUnderline(true)
+	setLink("", "send('" .. v .. "')", "")
+end
+	
+if multi then
+	moveCursorDown()
+	for _, v in pairs(exits_found) do
+		selectString(v, 1)
+		setHexFgColor(colorExit)
+		setUnderline(true)
+		setLink("", "send('" .. v .. "')", "")
+	end
+end
+	
+resetFormat()
+</script>
+				<triggerType>0</triggerType>
+				<conditonLineDelta>1</conditonLineDelta>
+				<mStayOpen>0</mStayOpen>
+				<mCommand></mCommand>
+				<packageName></packageName>
+				<mFgColor>#ff0000</mFgColor>
+				<mBgColor>#ffff00</mBgColor>
+				<mSoundFile></mSoundFile>
+				<colorTriggerFgColor>#000000</colorTriggerFgColor>
+				<colorTriggerBgColor>#000000</colorTriggerBgColor>
+				<regexCodeList>
+					<string>^(?&lt;prefix&gt;Es gibt .+ sichtbaren* Ausgae*nge*: )(?&lt;exits&gt;.+)</string>
+					<string>^(.+)\.$</string>
+				</regexCodeList>
+				<regexCodePropertyList>
+					<integer>1</integer>
+					<integer>1</integer>
+				</regexCodePropertyList>
+			</Trigger>
+			<Trigger isActive="yes" isFolder="no" isTempTrigger="no" isMultiline="no" isPerlSlashGOption="no" isColorizerTrigger="no" isFilterTrigger="no" isSoundTrigger="no" isColorTrigger="no" isColorTriggerFg="no" isColorTriggerBg="no">
+				<name>Keine Ausgänge</name>
+				<script>local colorStart = "00FF00" -- Beginn der Zeile
+
+selectCurrentLine()
+setHexFgColor(colorStart)</script>
+				<triggerType>0</triggerType>
+				<conditonLineDelta>0</conditonLineDelta>
+				<mStayOpen>0</mStayOpen>
+				<mCommand></mCommand>
+				<packageName></packageName>
+				<mFgColor>#ff0000</mFgColor>
+				<mBgColor>#ffff00</mBgColor>
+				<mSoundFile></mSoundFile>
+				<colorTriggerFgColor>#000000</colorTriggerFgColor>
+				<colorTriggerBgColor>#000000</colorTriggerBgColor>
+				<regexCodeList>
+					<string>^Es gibt keinen* sichtbaren* Ausgae*nge*\.$</string>
+				</regexCodeList>
+				<regexCodePropertyList>
+					<integer>1</integer>
+				</regexCodePropertyList>
+			</Trigger>
+		</TriggerGroup>
+	</TriggerPackage>
+</MudletPackage>
