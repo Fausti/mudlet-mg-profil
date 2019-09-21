@@ -1,6 +1,8 @@
 # mudlet-mg-profil
 Mein Mudletprofil für das deutsche MUD Morgengrauen.
 
+![Screenshot 2019-09-21 01 15 31](https://user-images.githubusercontent.com/229010/65372440-9c67b180-dc70-11e9-83b0-13d42f7f4c8a.png)
+
 ## Installation
 - Verzeichnis anlegen (z.B.: "D:\\Morgengrauen")
 - Inhalt des Repos dort rein
